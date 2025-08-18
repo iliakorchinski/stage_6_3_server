@@ -80,7 +80,6 @@ export const getTasksByBoard = async (req: Request, res: Response) => {
   try {
     const { boardId } = req.params;
 
-    // получаем все списки этой доски
     const lists = await prisma.list.findMany({
       where: { boardId },
       select: { id: true },
@@ -89,7 +88,6 @@ export const getTasksByBoard = async (req: Request, res: Response) => {
 
     const listIds = lists.map((l) => l.id);
 
-    // получаем все таски для этих списков
     const tasks = await prisma.task.findMany({
       where: { listId: { in: listIds } },
       orderBy: { position: 'asc' },

@@ -41,7 +41,6 @@ export const getListsByBoard = async (req: Request, res: Response) => {
   }
 };
 
-// Обновить лист
 export const updateList = async (req: Request, res: Response) => {
   try {
     const { listId } = req.params;
@@ -62,7 +61,6 @@ export const updateList = async (req: Request, res: Response) => {
   }
 };
 
-// Удалить лист
 export const deleteList = async (req: Request, res: Response) => {
   try {
     const { listId } = req.params;

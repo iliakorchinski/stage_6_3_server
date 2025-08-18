@@ -33,8 +33,8 @@ model List {
 model Task {
   id          String   @id @default(uuid())
   title       String
-  description String?   // опциональное поле
-  position    Int       // порядок задачи внутри списка
+  description String?  
+  position    Int      
   listId      String
   list        List      @relation(fields: [listId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now())
