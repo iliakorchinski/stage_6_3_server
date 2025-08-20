@@ -5,8 +5,7 @@ import { PrismaClient } from '@prisma/client';
 export const prisma = new PrismaClient();
 export const createList = async (req: Request, res: Response) => {
   try {
-    const { boardId } = req.params;
-    const { title } = req.body;
+    const { title, boardId } = req.body;
 
     const last = await prisma.list.findFirst({
       where: { boardId },
@@ -24,17 +23,25 @@ export const createList = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to create list' });
   }
 };
-
 export const getListsByBoard = async (req: Request, res: Response) => {
   try {
-    const { boardId } = req.params;
+    const { boardIds } = req.body as { boardIds: string[] };
 
-    const board = await prisma.board.findUnique({
-      where: { id: boardId },
+    if (!boardIds || boardIds.length === 0) {
+      return res.status(400).json({ error: 'boardIds are required' });
+    }
+
+    const boards = await prisma.board.findMany({
+      where: { id: { in: boardIds } },
       include: { lists: true },
     });
 
-    res.json(board?.lists.sort((a, b) => a.position - b.position));
+    const result = boards.map((board) => ({
+      boardId: board.id,
+      lists: board.lists.sort((a, b) => a.position - b.position),
+    }));
+
+    res.json(result);
   } catch (error) {
     console.error('Error fetching lists:', error);
     res.status(500).json({ error: 'Failed to fetch lists' });
