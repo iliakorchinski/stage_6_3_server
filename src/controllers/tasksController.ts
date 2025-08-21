@@ -4,8 +4,7 @@ import { PrismaClient } from '@prisma/client';
 export const prisma = new PrismaClient();
 export const createTask = async (req: Request, res: Response) => {
   try {
-    const { listId } = req.params;
-    const { title, description } = req.body;
+    const { title, description, listId } = req.body;
 
     const maxTask = await prisma.task.findFirst({
       where: { listId },
@@ -63,22 +62,9 @@ export const moveTask = async (req: Request, res: Response) => {
   }
 };
 
-export const getTasksByList = async (req: Request, res: Response) => {
-  try {
-    const { listId } = req.params;
-    const tasks = await prisma.task.findMany({
-      where: { listId },
-      orderBy: { position: 'asc' },
-    });
-    res.json(tasks);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch tasks' });
-  }
-};
-
 export const getTasksByBoard = async (req: Request, res: Response) => {
   try {
-    const { boardId } = req.params;
+    const { boardId } = req.body;
 
     const lists = await prisma.list.findMany({
       where: { boardId },
