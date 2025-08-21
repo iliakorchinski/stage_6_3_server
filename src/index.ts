@@ -1,5 +1,8 @@
 import express from 'express';
 import cors from 'cors';
+import boardRoutes from './routes/boardRoutes';
+import listRoutes from './routes/listsRoutes';
+import taskRoutes from './routes/tasksRoutes';
 
 const app = express();
 
@@ -8,9 +11,9 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3001;
 
-app.get('/', (req, res) => {
-  res.send('Trello Clone API');
-});
+app.use('/api/boards', boardRoutes);
+app.use('/api', listRoutes);
+app.use('/api/', taskRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
