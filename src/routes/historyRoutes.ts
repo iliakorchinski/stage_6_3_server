@@ -1,12 +1,8 @@
 import { Router } from 'express';
-import {
-  getHistoryByBoardId,
-  getHistoryByListId,
-} from '../controllers/historyController';
+import { getHistoryByBoardId } from '../controllers/historyController';
 
 const router = Router();
 
-router.get('/history/boards/:boardId', getHistoryByBoardId);
-router.get('/history/lists/:listId', getHistoryByListId);
+router.get('/history/:id', getHistoryByBoardId);
 
 export default router;

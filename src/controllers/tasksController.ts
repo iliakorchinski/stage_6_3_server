@@ -7,6 +7,10 @@ export const createTask = async (req: Request, res: Response) => {
   try {
     const { title, description, listId } = req.body;
 
+    const list = await prisma.list.findUnique({
+      where: { id: listId },
+    });
+
     const maxTask = await prisma.task.findFirst({
       where: { listId },
       orderBy: { position: 'desc' },
@@ -17,7 +21,7 @@ export const createTask = async (req: Request, res: Response) => {
     const task = await prisma.task.create({
       data: { title, description, position, listId },
     });
-    historyCreate('Task', listId, 'CREATE', undefined, undefined, {
+    historyCreate('Task', listId, 'CREATE', list?.boardId, undefined, {
       title: task.title,
     });
 
@@ -33,6 +37,7 @@ export const updateTask = async (req: Request, res: Response) => {
 
     const oldTask = await prisma.task.findUnique({
       where: { id: req.params.id },
+      include: { list: true },
     });
 
     const task = await prisma.task.update({
@@ -44,7 +49,7 @@ export const updateTask = async (req: Request, res: Response) => {
         'Task',
         task.listId,
         'UPDATE',
-        undefined,
+        oldTask?.list?.boardId,
         { title: oldTask?.title },
         { title: task.title }
       );
@@ -60,10 +65,17 @@ export const deleteTask = async (req: Request, res: Response) => {
   try {
     const oldTask = await prisma.task.findUnique({
       where: { id: req.params.id },
+      include: { list: true },
     });
-    historyCreate('Task', oldTask?.listId || '', 'DELETE', undefined, {
-      title: oldTask?.title,
-    });
+    historyCreate(
+      'Task',
+      oldTask?.listId || '',
+      'DELETE',
+      oldTask?.list?.boardId,
+      {
+        title: oldTask?.title,
+      }
+    );
 
     await prisma.task.delete({ where: { id: req.params.id } });
     res.json({ success: true });
@@ -77,6 +89,7 @@ export const moveTask = async (req: Request, res: Response) => {
     const { listId, position } = req.body;
     const oldTask = await prisma.task.findUnique({
       where: { id: req.params.id },
+      include: { list: true },
     });
 
     const list = await prisma.list.findUnique({
@@ -92,7 +105,7 @@ export const moveTask = async (req: Request, res: Response) => {
         'Task',
         listId,
         'MOVE',
-        undefined,
+        oldTask?.list?.boardId,
         { title: oldTask?.title },
         { title: list?.title }
       );
