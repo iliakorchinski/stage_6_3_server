@@ -6,7 +6,34 @@ export const prisma = new PrismaClient();
 
 export const getBoards = async (req: Request, res: Response) => {
   try {
+    const include = req.query.include as string | undefined;
     const boards = await prisma.board.findMany();
+
+    if (include === 'history') {
+      const boardIds = boards.map((b) => b.id);
+
+      const histories = await prisma.history.findMany({
+        where: { boardId: { in: boardIds } },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      const historyMap = histories.reduce<Record<string, typeof histories>>(
+        (acc, history) => {
+          if (!history.boardId) return acc;
+          if (!acc[history.boardId]) acc[history.boardId] = [];
+          acc[history.boardId].push(history);
+          return acc;
+        },
+        {}
+      );
+
+      const boardsWithHistory = boards.map((board) => ({
+        ...board,
+        history: historyMap[board.id] || [],
+      }));
+      return res.json(boardsWithHistory);
+    }
+
     res.json(boards);
   } catch (error) {
     console.error(error);
