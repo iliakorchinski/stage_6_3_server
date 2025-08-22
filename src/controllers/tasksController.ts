@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { historyCreate } from '../utils/historyCreate';
 
 export const prisma = new PrismaClient();
 export const createTask = async (req: Request, res: Response) => {
@@ -16,6 +17,9 @@ export const createTask = async (req: Request, res: Response) => {
     const task = await prisma.task.create({
       data: { title, description, position, listId },
     });
+    historyCreate('Task', listId, 'CREATE', undefined, undefined, {
+      title: task.title,
+    });
 
     res.json(task);
   } catch (err) {
@@ -27,10 +31,24 @@ export const updateTask = async (req: Request, res: Response) => {
   try {
     const { title, description } = req.body;
 
+    const oldTask = await prisma.task.findUnique({
+      where: { id: req.params.id },
+    });
+
     const task = await prisma.task.update({
       where: { id: req.params.id },
       data: { title, description },
     });
+    if (oldTask?.title !== task.title) {
+      historyCreate(
+        'Task',
+        task.listId,
+        'UPDATE',
+        undefined,
+        { title: oldTask?.title },
+        { title: task.title }
+      );
+    }
 
     res.json(task);
   } catch (err) {
@@ -40,6 +58,13 @@ export const updateTask = async (req: Request, res: Response) => {
 
 export const deleteTask = async (req: Request, res: Response) => {
   try {
+    const oldTask = await prisma.task.findUnique({
+      where: { id: req.params.id },
+    });
+    historyCreate('Task', oldTask?.listId || '', 'DELETE', undefined, {
+      title: oldTask?.title,
+    });
+
     await prisma.task.delete({ where: { id: req.params.id } });
     res.json({ success: true });
   } catch (err) {
@@ -50,11 +75,28 @@ export const deleteTask = async (req: Request, res: Response) => {
 export const moveTask = async (req: Request, res: Response) => {
   try {
     const { listId, position } = req.body;
+    const oldTask = await prisma.task.findUnique({
+      where: { id: req.params.id },
+    });
+
+    const list = await prisma.list.findUnique({
+      where: { id: listId },
+    });
 
     const task = await prisma.task.update({
       where: { id: req.params.id },
       data: { listId, position },
     });
+    if (oldTask?.listId !== listId) {
+      historyCreate(
+        'Task',
+        listId,
+        'MOVE',
+        undefined,
+        { title: oldTask?.title },
+        { title: list?.title }
+      );
+    }
 
     res.json(task);
   } catch (err) {
