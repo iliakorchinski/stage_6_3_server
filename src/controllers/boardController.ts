@@ -44,10 +44,25 @@ export const getBoards = async (req: Request, res: Response) => {
 export const getBoardById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const include = req.query.include as string[] | undefined;
     const board = await prisma.board.findUnique({ where: { id } });
 
     if (!board) {
       return res.status(404).json({ error: 'Board not found' });
+    }
+
+    const histories = await prisma.history.findMany({
+      where: { boardId: id },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (include?.includes('history') && !include?.includes('lists')) {
+      return res.json({ ...board, history: histories });
+    }
+
+    if (include?.includes('lists')) {
+      const lists = await prisma.list.findMany({ where: { boardId: id } });
+      return res.json({ ...board, lists, history: histories });
     }
 
     res.json(board);
